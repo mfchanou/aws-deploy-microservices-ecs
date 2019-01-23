@@ -1,0 +1,275 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      Tags:
+      - Key: Name
+        Value: !Join ['', [!Ref 'AWS::StackName', "-MyVPC"]]
+  MyVPCPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/28
+      VpcId: !Ref MyVPC
+      Tags:
+      - Key: Name
+        Value: !Join ['', [!Ref 'AWS::StackName', !Ref MyVPC, !Ref 'AWS::Region', "-PublicSubnet"]]
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+  MyVPCPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.16/28
+      VpcId: !Ref MyVPC
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      Tags:
+        - Key: Name
+          Value: !Join ['', [!Ref 'AWS::StackName', !Ref MyVPC, !Ref 'AWS::Region', "-PublicSubnet2"]]
+  MyVPCPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.32/28
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Join ['', [!Ref 'AWS::StackName', !Ref MyVPC, !Ref 'AWS::Region', '-PrivateSubnet1']]
+      AvailabilityZone: !Select 
+        - 1
+        - Fn::GetAZs: ""        
+  MyVPCPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.48/28
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Join ['', [!Ref 'AWS::StackName', !Ref MyVPC, !Ref 'AWS::Region', '-PrivateSubnet2']]
+      AvailabilityZone: !Select 
+        - 2
+        - Fn::GetAZs: ""
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref MyVPC
+  RouteIgw:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+  RouteTableAssociationPublic2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref MyVPCPublicSubnet2
+  RouteTableAssociationPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref MyVPCPublicSubnet
+  EIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  EIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NAT1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP1
+        - AllocationId
+      SubnetId: !Ref MyVPCPublicSubnet
+  NAT2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EIP2
+          - AllocationId
+      SubnetId: !Ref MyVPCPublicSubnet2
+  RouteNat1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NAT1
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+  PrivateRouteTable1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyVPCPrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+  RouteNat2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NAT2
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+  PrivateRouteTable2Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyVPCPrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+  ALBPublic:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets:
+        - !Ref MyVPCPublicSubnet
+        - !Ref MyVPCPublicSubnet2
+      SecurityGroups:
+        - !Ref SecurityGroupPublic
+  ALBPrivate:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internal
+      Subnets:
+        - !Ref MyVPCPrivateSubnet1
+        - !Ref MyVPCPrivateSubnet2
+      SecurityGroups:
+        - !Ref SecurityGroupGreetme
+  SecurityGroupPublic:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: PublicRules
+      GroupDescription: PermetTraficExterne
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+  SecurityGroupGreetme:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: GreetmeRules
+      GroupDescription:  PermetTraficInterne
+      VpcId: !Ref MyVPC
+  IngressRuleGreetme:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 8082
+      ToPort: 8082
+      SourceSecurityGroupId: !GetAtt SecurityGroupPublic.GroupId
+      GroupId: !GetAtt SecurityGroupGreetme.GroupId
+  IngressRuleGreetme01:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8081
+      SourceSecurityGroupId: !GetAtt SecurityGroupGreetme.GroupId
+      GroupId: !GetAtt SecurityGroupGreetme.GroupId
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: Fuzii-Cluster
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Principal:
+              Service: ec2.amazonaws.com
+            Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2Role
+  PrivateLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-06bec82fb46167b4f
+      IamInstanceProfile: !Ref InstanceProfile
+      InstanceType: t2.micro
+      UserData:
+      SecurityGroups:
+        -
+  AutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      VPCZoneIdentifier:
+        - !Ref 'PrivateSubnet1'
+      LaunchConfigurationName: !Ref PrivateLaunchConfiguration
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} - ECS Host
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+
+  ALBAPrivateAccessLog:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      Tags:
+        - Key: Nma
+Outputs:
+  ECSCluster:
+    Value: !Ref ECSCluster
+  VPC:
+    Value: !Ref MyVPC
+  PrivateSubnet1:
+    Value: !Ref MyVPCPrivateSubnet1
+  PrivateSubnet2:
+    Value: !Ref MyVPCPrivateSubnet2
+  PublicSubnet1:
+    Value: !Ref MyVPCPublicSubnet
+  PublicSubnet2:
+    Value: !Ref MyVPCPublicSubnet2
+  ALBPublic:
+    Value: !Ref ALBPublic
+  ALBPrivate:
+    Value: !Ref ALBPrivate
+  ALBPublicCNAME:
+    Value: !GetAtt ALBPublic.DNSName
+  ALBPrivateCNAME:
+    Value: !GetAtt ALBPrivate.DNSName
+  SecurityGroupGreetme:
+    Value: !GetAtt SecurityGroupGreetme.GroupId
