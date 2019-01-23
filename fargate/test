@@ -1,0 +1,8 @@
+aws cloudformation deploy --template-file greetme.yml  --stack-name greetme --region us-east-1 --capabilities CAPABILITY_NAMED_IAM --profil admin --parameter-overrides ClusterName=Fuzii-Cluster PublicSubnet1=subnet-0709047569f89a582 PublicSubnet2=subnet-029393805221e704c SecurityGroup=sg-0a25f768e42dd04dc MyVPC=vpc-06a9a71889659d905 ALBPublic=arn:aws:elasticloadbalancing:us-east-1:872402760125:loadbalancer/app/Fuzii-ALBPu-1B4HUE5CD46UR/efe4e289af567cdf ALBPrivateName=internal-Fuzii-ALBPr-QKHZ5R7BFYR5-747599842.us-east-1.elb.amazonaws.com
+
+aws cloudformation deploy --template-file name.yml  --stack-name name --region us-east-1 --capabilities CAPABILITY_NAMED_IAM --profil admin --parameter-overrides ClusterName=Fuzii-Cluster PrivateSubnet1=subnet-08ed172934124a7b5 PrivateSubnet2=subnet-0ab67e36db34f2807 SecurityGroupPrivate=sg-0a25f768e42dd04dc MyVPC=vpc-06a9a71889659d905 ALBPrivate=arn:aws:elasticloadbalancing:us-east-1:872402760125:loadbalancer/app/Fuzii-ALBPr-QKHZ5R7BFYR5/e7c299d0241e6d4d
+
+aws cloudformation deploy --template-file greeting.yml  --stack-name greeting --region us-east-1 --capabilities CAPABILITY_NAMED_IAM --profil admin --parameter-overrides ClusterName=Fuzii-Cluster PrivateSubnet1=subnet-08ed172934124a7b5 PrivateSubnet2=subnet-0ab67e36db34f2807 SecurityGroupPrivate=sg-0a25f768e42dd04dc MyVPC=vpc-06a9a71889659d905 ALBPrivate=arn:aws:elasticloadbalancing:us-east-1:872402760125:loadbalancer/app/Fuzii-ALBPr-QKHZ5R7BFYR5/e7c299d0241e6d4d
+
+
+

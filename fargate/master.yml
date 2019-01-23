@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  Infrastructure:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/VPC.yml
+
+  Name:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/name.yml
+      Parameters:
+        ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
+        PrivateSubnet1: !GetAtt Infrastructure.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt Infrastructure.Outputs.PrivateSubnet2
+        SecurityGroupPrivate: !GetAtt Infrastructure.Outputs.SecurityGroupGreetme
+        MyVPC: !GetAtt Infrastructure.Outputs.VPC
+        ALBPrivate: !GetAtt Infrastructure.Outputs.ALBPrivate
+
+  Greeting:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/greeting.yml
+      Parameters:
+        ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
+        PrivateSubnet1: !GetAtt Infrastructure.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt Infrastructure.Outputs.PrivateSubnet2
+        SecurityGroupPrivate: !GetAtt Infrastructure.Outputs.SecurityGroupGreetme
+        MyVPC: !GetAtt Infrastructure.Outputs.VPC
+        ALBPrivate: !GetAtt Infrastructure.Outputs.ALBPrivate
+
+  Greetme:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/greetme.yml
+      Parameters:
+        ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
+        PublicSubnet1: !GetAtt Infrastructure.Outputs.PublicSubnet1
+        PublicSubnet2: !GetAtt Infrastructure.Outputs.PublicSubnet2
+        SecurityGroup: !GetAtt Infrastructure.Outputs.SecurityGroupGreetme
+        MyVPC: !GetAtt Infrastructure.Outputs.VPC
+        ALBPublic: !GetAtt Infrastructure.Outputs.ALBPublic
+        ALBPrivateName: !GetAtt Infrastructure.Outputs.ALBPrivateCNAME
+
+Outputs:
+  ALBPublicName:
+    Value: !GetAtt Infrastructure.Outputs.ALBPublicCNAME

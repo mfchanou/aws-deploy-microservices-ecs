@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  ClusterName:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+  SecurityGroupPrivate:
+    Type: String
+  MyVPC:
+    Type: String
+  ALBPrivate:
+    Type: String
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${AWS::StackName}
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: mahfuz93/aws:name1.2-SNAPSHOT
+          Name: Name
+          PortMappings:
+            - ContainerPort: 8081
+          Cpu: 10
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Ref AWS::StackName
+          Memory: 500
+      Cpu: 256
+      Memory: 1GB
+      NetworkMode: awsvpc
+      ExecutionRoleArn: arn:aws:iam::872402760125:role/ecsTaskExecutionRole
+      RequiresCompatibilities:
+        - "FARGATE"
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: Listener
+    Properties:
+      Cluster: !Ref ClusterName
+      DesiredCount: 1
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerPort: 8081
+          ContainerName: Name
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroupPrivate
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+      TaskDefinition: !Ref TaskDefinition
+      ServiceName: Name
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 60
+      UnhealthyThresholdCount: 2
+      HealthCheckPath: /name
+      Name: Name
+      Port: 8081
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref MyVPC
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ALBPrivate
+      Port: 8081
+      Protocol: HTTP
