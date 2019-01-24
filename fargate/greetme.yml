@@ -25,7 +25,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: mahfuz93/aws:greetme1.2-SNAPSHOT
+        - Image: mahfuz93/aws:greetme1.3-SNAPSHOT
           Name: Greetme
           PortMappings:
             - ContainerPort: 8082
