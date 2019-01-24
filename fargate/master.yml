@@ -4,12 +4,12 @@ Resources:
   Infrastructure:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/VPC.yml
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-microservices-deploy-options/fargate/VPC.yml
 
   Name:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/name.yml
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-microservices-deploy-options/fargate/name.yml
       Parameters:
         ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
         PrivateSubnet1: !GetAtt Infrastructure.Outputs.PrivateSubnet1
@@ -21,7 +21,7 @@ Resources:
   Greeting:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/greeting.yml
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-microservices-deploy-options/fargate/greeting.yml
       Parameters:
         ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
         PrivateSubnet1: !GetAtt Infrastructure.Outputs.PrivateSubnet1
@@ -33,7 +33,7 @@ Resources:
   Greetme:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-deploy-options/fargate/greetme.yml
+      TemplateURL: https://s3.eu-west-3.amazonaws.com/fuzi-aws-microservices-deploy-options/fargate/greetme.yml
       Parameters:
         ClusterName: !GetAtt Infrastructure.Outputs.ECSCluster
         PublicSubnet1: !GetAtt Infrastructure.Outputs.PublicSubnet1
